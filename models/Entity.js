@@ -318,7 +318,7 @@ function entity() {
 						if(customers.username)
 						{
 							customers.conectionstats = 1;
-							customers.connectiondate = new Date();
+							customers.connectiondate = moment(new Date()).format("YYYY-MM-DD HH:mm:ss");
 						}
 						else
 						{
@@ -352,17 +352,17 @@ function entity() {
 					}
 					else
 					{
-						res.send({status:0,message:"New Enquiry Added Successfully."});
+						res.send({status:0,message:"your request has been received, We will contact you shortly."});
 					}
 					}
 				});
 		
 		});
-	}; 
+	};
 
 	
 	//----------------complaints-----------------------------------
-this.AddNewComplaints= function (complaints, res) {
+	this.AddNewComplaints= function (complaints, res) {
 		connection.acquire(function (err, con) {
 			console.log(complaints);
 			delete complaints.address;

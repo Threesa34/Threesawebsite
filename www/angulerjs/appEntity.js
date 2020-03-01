@@ -8,7 +8,16 @@ appEntity.controller('entityController', function ($window, $http, $scope) {
         404 PAGE
     */
 
+
+   function getUrlVars() {
+    var vars = {};
+    var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+        vars[key] = value;
+    });
+    return vars;
+}
   
+$scope.urlParameters = getUrlVars();
 
 
     
@@ -96,7 +105,7 @@ appEntity.controller('entityController', function ($window, $http, $scope) {
 
         $http({
                 method: 'POST',
-                url: 'http://103.252.7.5:8897/api/AddNewEnquiry/',
+                url: '/api/AddNewEnquiry',
                 data: $scope.customer,
                 headers: {
                     'Content-Type': 'application/json'
@@ -108,6 +117,8 @@ appEntity.controller('entityController', function ($window, $http, $scope) {
                     text: data.message,
                 });
                 $scope.customer = {};
+                $('#modal_Enquiries_frenchisies').modal('hide');
+            $('#ms-account-modal').modal('hide');
             });
     };
 
@@ -115,7 +126,7 @@ appEntity.controller('entityController', function ($window, $http, $scope) {
         $scope.complaint.createdby = 'From Website';
         $http({
                 method: 'POST',
-                url: 'http://103.252.7.5:8897/api/AddNewComplaints/',
+                url: '/api/AddNewComplaints/',
                 data: $scope.complaint,
                 headers: {
                     'Content-Type': 'application/json'
@@ -125,6 +136,8 @@ appEntity.controller('entityController', function ($window, $http, $scope) {
                 alert(data.message);
                 $scope.complaint = {};
             });
+            $('#modal_Enquiries_frenchisies').modal('hide');
+            $('#ms-account-modal').modal('hide');
     };
 
     $scope.getPlanDetails = function (plandetails) {
@@ -134,20 +147,41 @@ appEntity.controller('entityController', function ($window, $http, $scope) {
 
 
 
+$scope.disablepopuphiden = function()
+{
+    $scope.disablePopup = true;
+}
+function checkDisableStatus(){
+    return $scope.disablePopup; 
+}
+
     function hidepopup()
 	{
 		
-		clearTimeout(ShowFrenchisiesPopup);
+        clearTimeout(ShowFrenchisiesPopup);       
 		var hideFrenchisiesPopup = setTimeout(function () {
 
         $scope.customer.comment = "Enquiry for New franchise";
-
+        if(!checkDisableStatus())
+        {
         $('#modal_Enquiries_frenchisies').modal('hide');
         clearTimeout(hideFrenchisiesPopup);
+        }
     }, 5000);
 		
 	}
 
+
+
+    if($scope.urlParameters["th"] && $scope.urlParameters["th"] =="5RNya0RBZgMPtxpN3BrLhW9azAKNIP5FxpD201xhSI=")
+    {
+        $('#ms-account-modal').modal({
+            show: true,
+            backdrop: 'static',
+             keyboard: false
+        });
+    }
+    else{
     var ShowFrenchisiesPopup = setTimeout(function () {
 
         $scope.customer.comment = "Enquiry for New franchise";
@@ -157,7 +191,7 @@ appEntity.controller('entityController', function ($window, $http, $scope) {
             backdrop: 'static',
              keyboard: false
         });
-        hidepopup()
+        hidepopup();
     }, 3000);
-
+    }
 });

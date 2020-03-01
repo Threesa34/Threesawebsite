@@ -58,7 +58,51 @@ connection.init();
 routes.configure(app);
 
 
-var server = app.listen(80, function () {
+
+const hostname = 'threesainfoway.net';
+
+const cert = fs.readFileSync('./sslforfree/certificate.crt');
+const ca = fs.readFileSync('./sslforfree/ca_bundle.crt');
+const key = fs.readFileSync('./sslforfree/private.key');
+
+
+let httpsOptions = {
+    cert: cert, // fs.readFileSync('./ssl/example.crt');
+    ca: ca, // fs.readFileSync('./ssl/example.ca-bundle');
+    key: key // fs.readFileSync('./ssl/example.key');
+ };
+
+
+ const httpServer = http.createServer((req, res) => {
+    res.statusCode = 301;
+    res.setHeader('Location', `https://${hostname}${req.url}`);
+    res.end(); // make sure to call send() or end() to send the response
+ });
+
+ const httpsServer = https.createServer(httpsOptions, app);
+ 
+
+ app.use((req, res, next) => {
+    if(req.protocol === 'http') {
+      res.redirect(301, 'https://threesainfoway.net');
+    }
+    next();
+ });
+
+ // Your app code here
+ 
+ 
+
+//  console.log('Server listening on port ' + JSON.stringify(httpsServer));
+
+/*  var server = app.listen(80, function () {
     console.log('Server listening on port ' + server.address().port);
-}); 
+});   */
+
+
+
+
+
+ httpServer.listen(80);
+httpsServer.listen(443, hostname);
  

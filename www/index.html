@@ -77,7 +77,12 @@
                  <img src="/assets/img/threesa_logo_white_small.png" alt=""> 
                 <h3 class="no-m ms-site-title"><strong>Threesa Infoway</strong></h3>
               </div>
-              <div class="modal-header-tabs">
+
+              <div class="modal-header-tabs text-center" ng-if="urlParameters['th'] && urlParameters['th'] =='5RNya0RBZgMPtxpN3BrLhW9azAKNIP5FxpD201xhSI='">
+                <strong><h4><i class="fa fa-phone" aria-hidden="true"></i> New Enquiry</h4></strong>
+              </div>
+
+              <div class="modal-header-tabs" ng-hide="urlParameters['th'] && urlParameters['th'] =='5RNya0RBZgMPtxpN3BrLhW9azAKNIP5FxpD201xhSI='">
                 <ul class="nav nav-tabs nav-tabs-full nav-tabs-2 nav-tabs-primary" role="tablist">
                   <li class="nav-item" role="presentation">
                     <a href="#ms-login-tab" aria-controls="ms-login-tab" role="tab" data-toggle="tab" class="nav-link active withoutripple">
@@ -102,7 +107,7 @@
                             <i class="zmdi zmdi-account"></i>
                           </span>
                           <label class="control-label" for="ms-form-user-r"><span style="color:black">Name</span></label>
-                          <input type="text" style="color:black"  id="ms-form-user-r" ng-model="customer.customername" class="form-control" autofocus /> </div>
+                          <input type="text" style="color:black"  id="ms-form-user-r" ng-model="customer.customername" class="form-control"  /> </div>
                       </div>
 					  <div class="form-group label-floating">
                         <div class="input-group">
@@ -110,7 +115,7 @@
                             <i class="zmdi zmdi-phone"></i>
                           </span>
                           <label class="control-label" for="ms-form-pass-r"><span style="color:black">Mobile No.</span></label>
-                          <input type="number" ng-model="customer.mobile1"  id="ms-form-pass-r" class="form-control" autofocus> </div>
+                          <input type="number" ng-model="customer.mobile1"  id="ms-form-pass-r" class="form-control" > </div>
                       </div>
                       <div class="form-group label-floating">
                         <div class="input-group">
@@ -118,7 +123,7 @@
                             <i class="zmdi zmdi-email"></i>
                           </span>
                           <label class="control-label" for="ms-form-email-r"><span style="color:black">Email ID</span></label>
-                          <input type="email"   ng-model="customer.email" id="ms-form-email-r" class="form-control" autofocus> </div>
+                          <input type="email"   ng-model="customer.email" id="ms-form-email-r" class="form-control" > </div>
                       </div>
                       
                       <div class="form-group label-floating">
@@ -127,7 +132,7 @@
                             <i class="zmdi zmdi-dot-circle"></i>
                           </span>
                           <label class="control-label" for="ms-form-pass-rn"><span style="color:black">Address</span></label>
-                          <input type="text" ng-model="customer.address" id="ms-form-pass-rn" class="form-control" autofocus> </div>
+                          <input type="text" ng-model="customer.address" id="ms-form-pass-rn" class="form-control" > </div>
                       </div>
 					    <div class="form-group label-floating">
                         <div class="input-group">
@@ -137,7 +142,7 @@
                           <label class="control-label" for="ms-form-pass-rn"><span style="color:black">Message</span></label>
                           <input type="text" ng-model="customer.custome_message" id="ms-form-pass-rn" class="form-control"> </div>
                       </div>
-					 <center> <a href="javascript:void(0)" ng-click="AddNewEnquiry()" class="wave-effect-light btn btn-raised btn-google" data-dismiss="modal">
+					 <center> <a href="javascript:void(0)" ng-click="AddNewEnquiry()" class="wave-effect-light btn btn-raised btn-google">
                      Submit</a></center>
                     </fieldset>
                   </form>
@@ -152,23 +157,14 @@
                             <i class="zmdi zmdi-account"></i>
                           </span>
                           <label class="control-label" for="ms-form-user-r"><span style="color:black">Register Username</span></label>
-                          <input type="text" style="color:black"  ng-model="complaint.customer"   id="ms-form-user-r" class="form-control" autofocus /> </div>
+                          <input type="text" style="color:black"  ng-model="complaint.customer"   id="ms-form-user-r" class="form-control"  /> </div>
                       </div>
 					  <div class="form-group label-floating">
-                        <div class="input-group">
-                          <span class="input-group-addon">
-                            <i class="zmdi zmdi-phone"></i>
-                          </span>
-                          <label class="control-label" for="ms-form-pass-r"><span style="color:black">Mobile No.</span></label>
-                          <input type="number" ng-model="complaint.mobile1"  id="ms-form-pass-r" class="form-control" autofocus> </div>
-                      </div>
-                      <div class="form-group label-floating">
-                        <div class="input-group">
-                          <span class="input-group-addon">
+                        <div class="input-group">z
                             <i class="zmdi zmdi-email"></i>
                           </span>
                           <label class="control-label" for="ms-form-email-r"><span style="color:black">Address</span></label>
-                          <input type="email" id="ms-form-email-r" ng-model="complaint.address"  class="form-control" autofocus> </div>
+                          <input type="email" id="ms-form-email-r" ng-model="complaint.address"  class="form-control" > </div>
                       </div>
                       
                       <div class="form-group label-floating">
@@ -197,7 +193,7 @@
                           <label class="control-label" for="ms-form-pass-rn"><span style="color:black">Other Issue</span></label>
                           <input type="text" ng-model="complaint.otherissue" id="ms-form-pass-rn" class="form-control"  /> </div>
                       </div>
-					 <center> <a href="javascript:void(0)" class="wave-effect-light btn btn-raised btn-google" ng-click="AddNewComplaints()" data-dismiss="modal">
+					 <center> <a href="javascript:void(0)" class="wave-effect-light btn btn-raised btn-google" ng-click="AddNewComplaints()">
                      Submit</a></center>
                  </fieldset>
                   </form>
@@ -261,7 +257,7 @@
                             <i class="zmdi zmdi-account"></i>
                           </span>
                           <label class="control-label" for="ms-form-user-r"><span style="color:black">Name</span></label>
-                          <input type="text" id="ms-form-user-r" ng-model="customer.customername" class="form-control" autofocus /> </div>
+                          <input type="text" id="ms-form-user-r" ng-model="customer.customername" class="form-control"  /> </div>
                       </div>
 					  <div class="form-group label-floating">
                         <div class="input-group">
@@ -294,7 +290,7 @@
                             <i class="zmdi zmdi-comment-outline"></i>
                           </span>
                           <label class="control-label" for="ms-form-pass-rn-enq"><span style="color:black">Message</span></label>
-                          <input type="text" ng-model="customer.custome_message" id="ms-form-pass-rn-enq" class="form-control" autofocus> </div>
+                          <input type="text" ng-model="customer.custome_message" id="ms-form-pass-rn-enq" class="form-control" > </div>
                       </div>
 					 <center> <a href="javascript:void(0)" ng-click="AddNewEnquiry()" class="wave-effect-light btn btn-raised btn-google" data-dismiss="modal">
                      Submit</a></center>
@@ -339,7 +335,7 @@
                         <i class="zmdi zmdi-account"></i>
                       </span>
                       <label class="control-label" for="ms-form-user-r"><span style="color:black">Name</span></label>
-                      <input type="text" id="ms-form-user-r" ng-model="customer.customername" class="form-control" autofocus /> </div>
+                      <input type="text" id="ms-form-user-r" ng-model="customer.customername" class="form-control"  ng-focus="disablepopuphiden()"/> </div>
                   </div>
         <div class="form-group label-floating">
                     <div class="input-group">
@@ -347,7 +343,7 @@
                         <i class="zmdi zmdi-phone"></i>
                       </span>
                       <label class="control-label" for="ms-form-pass-r"><span style="color:black">Mobile No.</span></label>
-                      <input type="number" ng-model="customer.mobile1"  id="ms-form-pass-r" class="form-control" > </div>
+                      <input type="text" ng-model="customer.mobile1"  id="ms-form-pass-r" class="form-control" ng-focus="disablepopuphiden()"> </div>
                   </div>
                   <div class="form-group label-floating">
                     <div class="input-group">
@@ -355,7 +351,7 @@
                         <i class="zmdi zmdi-email"></i>
                       </span>
                       <label class="control-label" for="ms-form-email-r"><span style="color:black">Email ID</span></label>
-                      <input type="email"   ng-model="customer.email" id="ms-form-email-r" class="form-control" > </div>
+                      <input type="email"   ng-model="customer.email" id="ms-form-email-r" class="form-control" ng-focus="disablepopuphiden()"> </div>
                   </div>
                   
                   <div class="form-group label-floating">
@@ -364,7 +360,7 @@
                         <i class="zmdi zmdi-dot-circle"></i>
                       </span>
                       <label class="control-label" for="ms-form-pass-rn"><span style="color:black">Address</span></label>
-                      <input type="text" ng-model="customer.address" id="ms-form-pass-rn" class="form-control" > </div>
+                      <input type="text" ng-model="customer.address" id="ms-form-pass-rn" class="form-control" ng-focus="disablepopuphiden()"> </div>
                   </div>
           <div class="form-group label-floating">
                     <div class="input-group">
@@ -372,9 +368,9 @@
                         <i class="zmdi zmdi-comment-outline"></i>
                       </span>
                       <label class="control-label" for="ms-form-pass-rn-enq"><span style="color:black">Message</span></label>
-                      <input type="text" ng-model="customer.custome_message" id="ms-form-pass-rn-enq" class="form-control" autofocus> </div>
+                      <input type="text" ng-model="customer.custome_message" id="ms-form-pass-rn-enq" class="form-control" ng-focus="disablepopuphiden()"> </div>
                   </div>
-       <center> <a href="javascript:void(0)" ng-click="AddNewEnquiry()" class="wave-effect-light btn btn-raised btn-google" data-dismiss="modal">
+       <center> <a href="javascript:void(0)" ng-click="AddNewEnquiry()" classz="wave-effect-light btn btn-raised btn-google">
                  Submit</a></center>
                 </fieldset>
               </form>
