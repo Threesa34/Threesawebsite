@@ -16,6 +16,15 @@ module.exports = {
             user.SetRgIdForPush(req.body, res);
         });
 		
+		app.post('/api/SetTokenForPush/', function (req, res) {
+            user.SetTokenForPush(req.body, res);
+        });
+		
+	
+		app.post('/api/SendCurrentLocation/', function (req, res) {
+            products.SendCurrentLocation(req, res);
+        });
+		
 	
 		
 		app.post('/api/ResetUUID/', function (req, res) {
@@ -56,7 +65,7 @@ module.exports = {
             user.getSupervisordetails(req.params.userlevel, res);
         });
 		app.get('/api/userList/', function (req, res) {
-            user.userList(req, res);
+            user.userList(req, res); // updated on 18-11-2019 for display birthdays
         });
 		app.get('/api/userdetails/:userid', function (req, res) {
             user.getUserDetails1(req.params.userid, res);
@@ -244,6 +253,10 @@ module.exports = {
 			 Entity.UpdateEnquiry(req.body,res);
         }); 
 		
+		app.post('/api/savesenderid/', function (req, res) {
+			 Entity.savesenderid(req.body,res);
+        }); 
+		
 		app.post('/api/DeleteSelectedEnquiry/', function (req, res) {
 			 Entity.DeleteSelectedEnquiry(req.body,res);
         }); 
@@ -299,14 +312,32 @@ module.exports = {
 		app.get('/api/Getpodetails/:poid', function (req, res) {
 			 purchase.Getpodetails(req.params.poid,res);
         }); 
+		
+		app.get('/api/GetPurchaseId/:poid', function (req, res) {
+			 products.GetPurchaseId(req.params.poid,res);
+        }); 
+		
+		app.get('/api/ListPurchases/', function (req, res) {
+			 products.ListPurchases(req,res);
+        }); 
 		app.delete('/api/Deletepo/:poid', function (req, res) {
 			 purchase.DeletePO(req.params.poid,res);
+        }); 
+		app.post('/api/RemovePoPrductAtEdit/', function (req, res) {
+			 products.RemovePoPrductAtEdit(req.body,res);
+        });
+		app.post('/api/UpdatePurchaseOrder/', function (req, res) {
+			 products.UpdatePurchaseOrder(req.body,res);
         }); 
 		app.post('/api/addPO/', function (req, res) {
 			 purchase.AddPo(req.body,res);
         }); 
 		app.post('/api/Editpurchase/', function (req, res) {
 			 purchase.EditPoDetails(req.body,res);
+        }); 
+		
+		app.post('/api/SaveGrDetails/', function (req, res) {
+			 purchase.SaveGrDetails(req.body,res);
         }); 
 		
 		/* GR */
@@ -485,6 +516,10 @@ module.exports = {
 		
 		app.get('/api/ListUserReviews/:userlevel/:userid', function (req, res) {
 			 products.ListUserReviews(req.params.userlevel,req.params.userid,res);
+		}); 
+		
+		app.get('/api/getpoitemdetails/:serialno/:grid', function (req, res) {
+			 products.getPoItemDetails(req.params.serialno,req.params.grid,res);
         }); 
 		
 		app.delete('/api/deleteReview/:id', function (req, res) {
@@ -638,6 +673,10 @@ module.exports = {
 		app.delete('/api/Deletevendorpayment/:id', function (req, res) {
 			 purchase.Deletevendorpayment(req.params.id,res);
         }); 
+		
+		app.delete('/api/DeleteSubPayment/:id', function (req, res) {
+			 purchase.Deletevendorpayment(req.params.id,res);
+        }); 
 
 		
 				/* RECIEPTS */
@@ -678,7 +717,15 @@ module.exports = {
 		
 		app.get('/api/listCurentPossitionWithUser/:userid', function(req, res) { 
 		products.listCurentPossitionWithUser(req.params.userid,res);
-		});		
+		});	
+		
+		app.get('/api/TrackCurentPossitionWithUser/:userid/:trackdate', function(req, res) { 
+		products.TrackCurentPossitionWithUser(req.params.userid,req.params.trackdate,res);
+		});
+		
+		app.get('/api/getUserTracking/:userid/:trackdate', function(req, res) { 
+			products.getUserTracking(req.params.userid,req.params.trackdate,res);
+			});
 		
 		app.get('/api/updateLogoutstatus/:userid', function(req, res) { 
 		products.updateLogoutstatus(req.params.userid,res);
@@ -756,6 +803,11 @@ module.exports = {
 				
 				app.post('/api/AddNewItem/', function (req, res) {
 					products.AddNewItem(req.body,res);
+				}); 
+		
+
+			app.post('/api/SavePurchaseOrder/', function (req, res) {
+					products.SavePurchaseOrder(req.body,res);
 				}); 
 		
 				app.delete('/api/deleteBeatDetails/:beatid', function (req, res) {
@@ -839,9 +891,16 @@ module.exports = {
 		
 		app.post('/api/UploadEmployee/', function (req, res) {
 			 Entity.UploadEmployee(req.body,res);
-        }); 
+		}); 
+		
+
+
+
 		/* salary */
 		
+		app.post('/api/getEmployeeAttendanceReport/', function (req, res) {
+			Entity.getEmployeeAttendanceReport(req.body,res);
+	   }); 
 		
 		app.get('/api/getemployeesalary/:month', function (req, res) {
 			 Entity.GetEmployeeSalary(req.params.month,res);
@@ -859,7 +918,7 @@ module.exports = {
 		
 		
 		
-app.get('/api/ListAdvancepayment/:userid', function (req, res) {
+		app.get('/api/ListAdvancepayment/:userid', function (req, res) {
 			 Entity.ListAdvancepayment(req.params.userid,res);
         });
 		
@@ -881,8 +940,33 @@ app.get('/api/ListAdvancepayment/:userid', function (req, res) {
 		
 	
 		
+		app.get('/api/getEmployesLoanDetails/:userid', function (req, res) {
+			 Entity.getEmployesLoanDetails(req.params.userid,res);
+        });
+		
+		app.get('/api/ListLoanPayments/', function (req, res) {
+			 Entity.ListLoanPayments(req,res);
+        });
+		app.get('/api/getLoanPaymentData/:paymentid', function (req, res) {
+			 Entity.getLoanPaymentData(req.params.paymentid,res);
+        });
+		app.get('/api/getEmployesLoanPaymentDetails/:empid', function (req, res) {
+			 Entity.getEmployesLoanPaymentDetails(req.params.empid,res);
+        });
+		app.delete('/api/DeleteLoanPaymentData/:paymentid', function (req, res) {
+			 Entity.DeleteLoanPaymentData(req.params.paymentid,res);
+        });
+		
+		app.post('/api/SaveLoanPaymentdetails/', function (req, res) {
+			 Entity.SaveLoanPaymentdetails(req.body,res);
+        });
+		
 		app.get('/api/ListLoan/:userid/:userlevel', function (req, res) {
 			 Entity.ListLoan(req.params.userid,req.params.userlevel,res);
+        });
+		
+		app.get('/api/AuthenticateAdmin/:userlevel/:password', function (req, res) {
+			 Entity.AuthenticateAdmin(req.params.userlevel,req.params.password,res);
         });
 		
 		app.get('/api/getLoanData/:id', function (req, res) {
@@ -1034,6 +1118,18 @@ app.get('/api/ListAdvancepayment/:userid', function (req, res) {
 		
 		app.get('/api/ListStockSRN/', function (req, res) {
 			 purchase.ListStockSRN(req,res);
+        });
+		
+		app.get('/api/ListPurchaeStock/', function (req, res) {
+			 purchase.ListPurchaeStock(req,res);
+        }); 
+		
+		app.post('/api/getUsedItems/', function (req, res) {
+			 purchase.getUsedItems(req.body,res);
+        }); 
+		
+		app.post('/api/SaveSRNData/', function (req, res) {
+			 purchase.SaveSRNData(req.body,res);
         }); 
 		
 		app.delete('/api/DeleteOffice/:id', function (req, res) {
@@ -1173,7 +1269,7 @@ app.get('/api/ListAdvancepayment/:userid', function (req, res) {
 		app.get('/api/GetAdvertisementDetails/:advid', function (req, res) {
 			 products.GetAdvertisementDetails(req.params.advid,res);
         }); 
-		
+	
 		app.post('/api/DeleteAdvertsiment/', function (req, res) {
 			 products.DeleteAdvertsiment(req.body,res);
         }); 
@@ -1182,8 +1278,90 @@ app.get('/api/ListAdvancepayment/:userid', function (req, res) {
 			 products.SendAdvertisement(req.body,res);
         }); 
 		
+			
+		app.get('/api/ListUserOfChatting/:userid', function (req, res) {
+			 products.ListUserOfChatting(req.params.userid,res);
+        }); 
 		
 		
+		app.post('/api/getBgLocation', function (req, res) {
+			 console.log(req.body);
+        }); 
+			
+		app.delete('/api/RemoveBillPayEntry/:paydetailsid', function (req, res) {
+			 products.RemoveBillPayEntry(req.params.paydetailsid,res);
+        });
+
+		app.delete('/api/DeleteOfficeMiscPayment/:paymasterid', function (req, res) {
+			 products.DeleteOfficeMiscPayment(req.params.paymasterid,res);
+        });
+	
+		app.get('/api/ListBillPayEntry/', function (req, res) {
+			 products.ListBillPayEntry(req,res);
+        });
+		
+		app.get('/api/getMiscPaymentData/:paymentid', function (req, res) {
+			 products.getMiscPaymentData(req.params.paymentid,res);
+        });
+
+		app.post('/api/AddOfficeMiscPayments/', function (req, res) {
+			 products.AddOfficeMiscPayments(req.body,res);
+        }); 
+		
+		
+		app.post('/api/SaveAdvancePaymentdatils', function (req, res) {
+			 products.SaveAdvancePaymentdetails(req.body,res);
+        }); 
+		
+		app.get('/api/ListAdvancePaymentMobile/:userid/:userlevel', function (req, res) {
+			 products.ListAdvancePayment(req.params.userid,req.params.userlevel,res);
+        });
+		
+		app.get('/api/getAdvancePaymentDetails/:paymentid', function (req, res) {
+			 products.getAdvancePaymentDetails(req.params.paymentid,res);
+        }); 
+		
+		app.delete('/api/DeleteAdvancePayment/:paymentid', function (req, res) {
+			 products.DeleteAdvancePayment(req.params.paymentid,res);
+        }); 
+		
+		
+		
+		app.get('/api/ListLoanDetails/:userid/:userlevel', function (req, res) {
+			 products.ListLoanDetails(req.params.userid,req.params.userlevel,res);
+        });
+		
+		app.get('/api/getAdvertisementimage/:advid', function (req, res) {
+			 products.getAdvertisementimage(req.params.advid,res);
+        });
+		
+		app.post('/api/getGeoLocation/', function (req, res) {
+			 products.getGeoLocation(req,res);
+		});
+		
+		app.post('/api/mobile/getDashboardCounts/', function (req, res) {
+			 products.getDashboardCounts(req,res);
+        });
 	
     }
 };
+
+
+
+
+
+
+// Update - 
+
+/*
+
+ type "-" and save-----
+
+ example: type - 
+
+      -
+ -
+-
+
+
+*/

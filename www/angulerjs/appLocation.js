@@ -35,7 +35,7 @@ Locationapp.config(['$httpProvider', function($httpProvider) {
 			{
 				$http({
               method: 'GET'
-              , url: 'http://103.252.7.5:8897/api/getattendancestatus/'+$scope.userid
+              , url: '/api/getattendancestatus/'+$scope.userid
               , dataType: 'jsonp'
           }).then(function (response) {
               $scope.AttendanceStatus = response.data;
@@ -73,7 +73,7 @@ Locationapp.config(['$httpProvider', function($httpProvider) {
 						}; 
 				$http({
 				 method  : 'POST',
-				 url     : 'http://103.252.7.5:8897/api/userAttendance/',
+				 url     : '/api/userAttendance/',
 				 data    : currentLocation,
 				 headers : {'Content-Type': 'application/json'} 
 			})
@@ -114,7 +114,7 @@ Locationapp.config(['$httpProvider', function($httpProvider) {
 		$scope.ListUser = function () {
           $http({
               method: 'GET'
-              , url: 'http://103.252.7.5:8897/api/userList/'
+              , url: '/api/userList/'
               , dataType: 'jsonp'
           }).then(function (response) {
               $scope.userList = response.data;
@@ -137,7 +137,7 @@ Locationapp.config(['$httpProvider', function($httpProvider) {
 	  $scope.AuthenticateAdmin = function (password) {
           $http({
               method: 'GET'
-              , url: 'http://103.252.7.5:8897/api/AuthenticateAdmin/'+$scope.userlevel+'/'+password
+              , url: '/api/AuthenticateAdmin/'+$scope.userlevel+'/'+password
               , dataType: 'jsonp'
           }).then(function (response) {
 			  console.log(response);
@@ -309,7 +309,7 @@ modifiedtrackdate = yy+"-"+mm+"-"+dd;
 
 $http({
   method: 'GET'
-  , url: 'http://103.252.7.5:8897/api/getUserTracking/'+selecteduserid+'/'+modifiedtrackdate
+  , url: '/api/getUserTracking/'+selecteduserid+'/'+modifiedtrackdate
   , dataType: 'jsonp'
 }).then(function (response) {
 console.log(response.data)
@@ -349,7 +349,7 @@ locationPoints.map(function(value)
           
 		   $http({
               method: 'GET'
-              , url: 'http://103.252.7.5:8897/api/TrackCurentPossitionWithUser/'+selecteduserid+'/'+modifiedtrackdate
+              , url: '/api/TrackCurentPossitionWithUser/'+selecteduserid+'/'+modifiedtrackdate
               , dataType: 'jsonp'
           }).then(function (response) {
               $scope.userTrackList = response.data;
@@ -473,7 +473,7 @@ var z = 0;
 									}; 
 					$http({
 							    method  : 'POST',
-								url     : 'http://103.252.7.5:8897/api/UpdateCurrentLocation/',
+								url     : '/api/UpdateCurrentLocation/',
 								data    : currentLocation,
 								headers : {'Content-Type': 'application/json'} 
 					})

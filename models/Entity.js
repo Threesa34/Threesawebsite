@@ -1,6 +1,7 @@
 var connection = require('../connection');
 var jwt = require('jsonwebtoken');
 var nodemailer = require('nodemailer');
+var moment = require('moment');
 var smtpConfig = {
     host: 'smtp.rediffmailpro.com'
     , port: 587
@@ -174,13 +175,13 @@ function entity() {
 		connection.acquire(function (err, con) {
 					if(userlevel == "HO" || userlevel == "SUPERVISOR")
 					{
-						var sql = 'SELECT *,(SELECT areamaster.areaname FROM areamaster WHERE areamaster.id = enquiry.area) as areaname,(SELECT user.username from user WHERE user.id = enquiry.userid) as username,(SELECT user.username from  user WHERE user.id = enquiry.createdby) as createdbyuser,(SELECT CONCAT(plans.name,"_",plans.type,"_",plans.validity) FROM plans WHERE plans.id = enquiry.plan) as planname FROM `enquiry` order by id desc';
+						var sql = 'SELECT *,(SELECT advertisment.name FROM `advertisment` WHERE advertisment.id = enquiry.advid) as advname,(SELECT areamaster.areaname FROM areamaster WHERE areamaster.id = enquiry.area) as areaname,(SELECT user.username from user WHERE user.id = enquiry.userid) as username,(SELECT user.username from user WHERE user.id = (SELECT a.supervisor FROM user a WHERE a.id = enquiry.createdby)) as Supervisor,(SELECT user.username from  user WHERE user.id = enquiry.createdby) as createdbyuser,(SELECT CONCAT(plans.name,"_",plans.type,"_",plans.validity) FROM plans WHERE plans.id = enquiry.plan) as planname FROM `enquiry` order by id desc';
 					}
 					
 					
 					 else
 					{
-						var sql = 'SELECT *,(SELECT areamaster.areaname FROM areamaster WHERE areamaster.id = enquiry.area) as areaname,(SELECT user.username from user WHERE user.id = enquiry.userid) as username,(SELECT user.username from  user WHERE user.id = enquiry.createdby) as createdbyuser,(SELECT CONCAT(plans.name,"_",plans.type,"_",plans.validity) FROM plans WHERE plans.id = enquiry.plan) as planname FROM `enquiry` where createdby = '+userid+' OR(userid = '+userid+' OR enquiry.userid in (SELECT user.id FROM user WHERE user.supervisor = '+userid+')) order by id desc';
+						var sql = 'SELECT *,(SELECT advertisment.name FROM `advertisment` WHERE advertisment.id = enquiry.advid) as advname,(SELECT areamaster.areaname FROM areamaster WHERE areamaster.id = enquiry.area) as areaname,(SELECT user.username from user WHERE user.id = enquiry.userid) as username,(SELECT user.username from  user WHERE user.id = enquiry.createdby) as createdbyuser,(SELECT user.username from user WHERE user.id = (SELECT a.supervisor FROM user a WHERE a.id = enquiry.createdby)) as Supervisor,(SELECT CONCAT(plans.name,"_",plans.type,"_",plans.validity) FROM plans WHERE plans.id = enquiry.plan) as planname FROM `enquiry` where createdby = '+userid+' OR (userid = '+userid+' OR enquiry.userid in (SELECT user.id FROM user WHERE user.supervisor = '+userid+')) OR createdby in (SELECT user.id FROM user WHERE user.supervisor = '+userid+') order by id desc';
 					} 
 				con.query(sql, function (err, result) {
 					con.release();
@@ -198,7 +199,7 @@ function entity() {
 	this.getEnquiryData= function (enquiryid, res) {
 		connection.acquire(function (err, con) {
 		
-				con.query('select *,(CASE WHEN enquiry.approved = "Yes" THEN "Enquiry Approved By Mangement" WHEN enquiry.approved = "No" THEN "Enquiry Rejected From Mangement" END) as approvalstm from enquiry where id = '+enquiryid, function (err, result) {
+				con.query('select *,(CASE WHEN enquiry.approved = "Yes" THEN "Enquiry Approved By Mangement" WHEN enquiry.approved = "No" THEN "Enquiry Rejected From Mangement" ELSE "Pending" END) as approvalstm from enquiry where id = '+enquiryid, function (err, result) {
 					con.release();
 
 					if(err)
@@ -213,13 +214,32 @@ function entity() {
 		});
 	}; 
 	
+	this.savesenderid= function (senderdetails, res) {
+		connection.acquire(function (err, con) {
+		
+				con.query('INSERT INTO `advsendersids`(`senderid`, `advid`) VALUES (?,?)',[senderdetails.senderid,senderdetails.advid], function (err, result) {
+					con.release();
+
+					if(err)
+					{
+						res.send({status:1,message:'error'});
+					}
+					else
+					{
+						res.send({status:0,message:'done'});
+					}
+				});
+		
+		});
+	}; 
+	
 	
 	this.UpdateEnquiry= function (enquirydetails, res) {
 		connection.acquire(function (err, con) {
 			delete enquirydetails[0].approvalstm;
 			if(enquirydetails[0].username != null)
 			{
-									enquirydetails[0].connectiondate = new Date();
+									enquirydetails[0].connectiondate = moment(new Date()).format("YYYY-MM-DD HH:mm:ss");
 									enquirydetails[0].conectionstats = 1;
 					con.query('update enquiry set ? where id = ?',[enquirydetails[0],enquirydetails[0].id], function (err, result) {
 					console.log(err);
@@ -358,11 +378,11 @@ function entity() {
 				});
 		
 		});
-	};
+	}; 
 
 	
 	//----------------complaints-----------------------------------
-	this.AddNewComplaints= function (complaints, res) {
+this.AddNewComplaints= function (complaints, res) {
 		connection.acquire(function (err, con) {
 			console.log(complaints);
 			delete complaints.address;
@@ -571,11 +591,13 @@ function entity() {
 	/* salary */
 	
 	
+	/* "select MONTH('"+month+"') as month,user.id,user.username,user.fullname,(CASE WHEN user.userlevel = 'FIELD' || user.userlevel = 'SUPERVISOR' THEN 'Network Engineer' WHEN user.userlevel ='SALES EXICUTIVE' THEN 'SALES EXICUTIVE' ELSE 'Back Office' END) as designation,(CASE WHEN user.userlevel = 'FIELD' || user.userlevel = 'SUPERVISOR' THEN 'Engineer' WHEN user.userlevel ='SALES EXICUTIVE' THEN 'SALES' ELSE 'Management' END) as department,day(last_day('"+month+"')) as workingdays,(SELECT COUNT(*) FROM userattendance WHERE userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') AND userattendance.outtime IS NOT NULL and DATE_FORMAT(userattendance.intime, '%H:%i %p') < (SELECT DATE_FORMAT(shiftmaster.intime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)) AND DATE_FORMAT(userattendance.outtime, '%H:%i %p') >= (SELECT DATE_FORMAT(shiftmaster.outtime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid))) as presentdays,(SELECT COUNT(*) FROM userattendance WHERE userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') AND(userattendance.outtime IS NULL OR DATE_FORMAT(userattendance.intime, '%H:%i %p') > (SELECT DATE_FORMAT(shiftmaster.intime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)) OR DATE_FORMAT(userattendance.outtime, '%H:%i %p') < (SELECT DATE_FORMAT(shiftmaster.outtime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)))) as halfdays,IFNULL((SELECT employeemaster.salary FROM employeemaster WHERE employeemaster.id = user.empid),0) as salary,(SELECT COUNT(*) FROM userattendance WHERE DAYNAME(userattendance.attdate) = 'Thursday' AND userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') AND userattendance.outtime IS NOT NULL) as thursdays,(SELECT employeemaster.joindate FROM employeemaster WHERE employeemaster.id = user.empid) as joiningdate,IFNULL(ROUND(((SELECT employeemaster.salary FROM employeemaster WHERE employeemaster.id = user.empid) / day(last_day('"+month+"'))),2),0) as perdaysal,IFNULL(ROUND((((SELECT employeemaster.salary FROM employeemaster WHERE employeemaster.id = user.empid) / day(last_day('"+month+"'))) * (SELECT COUNT(*) FROM userattendance WHERE DAYNAME(userattendance.attdate) = 'Thursday' AND userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') AND userattendance.outtime IS NOT NULL) +(((SELECT employeemaster.salary FROM employeemaster WHERE employeemaster.id = user.empid) / day(last_day('"+month+"'))) * (SELECT COUNT(*) FROM userattendance WHERE userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') AND userattendance.outtime IS NOT NULL and DATE_FORMAT(userattendance.intime, '%H:%i %p') < (SELECT DATE_FORMAT(shiftmaster.intime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)) AND DATE_FORMAT(userattendance.outtime, '%H:%i %p') >= (SELECT DATE_FORMAT(shiftmaster.outtime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid))))+ ((((SELECT employeemaster.salary FROM employeemaster WHERE employeemaster.id = user.empid) / day(last_day('"+month+"'))) * (SELECT COUNT(*) FROM userattendance WHERE userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') AND(userattendance.outtime IS NULL OR DATE_FORMAT(userattendance.intime, '%H:%i %p') > (SELECT DATE_FORMAT(shiftmaster.intime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)) OR DATE_FORMAT(userattendance.outtime, '%H:%i %p') < (SELECT DATE_FORMAT(shiftmaster.outtime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)))))/ 2)),2),0) as totalsal,IFNULL((SELECT SUM(advancepayment.amt) FROM advancepayment WHERE advancepayment.userid = user.id AND MONTH(advancepayment.paymentmonth) = MONTH('"+month+"')),0) as advance,IFNULL((SELECT SUM(loan.monthlyamt) FROM loan WHERE loan.userid = user.id AND loan.loanamt > 0),0) as loaninst,(SELECT COUNT(*) FROM userattendance WHERE userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') and (DATE_FORMAT(userattendance.intime,'%h:%i %p')) BETWEEN (SELECT DATE_FORMAT((SELECT DATE_ADD(shiftmaster.intime,INTERVAL 0 HOUR) FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)),'%h:%i %p'))  and (SELECT DATE_FORMAT((SELECT DATE_ADD(shiftmaster.intime,INTERVAL 1 HOUR) FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)),'%h:%i %p'))) as Latemarks FROM user" */
+	
 	this.GetEmployeeSalary = function(month,res)
 	{ 			
 		connection.acquire(function(err, con) {
 			
-			con.query("select MONTH('"+month+"') as month,user.id,user.username,user.fullname,(CASE WHEN user.userlevel = 'FIELD' || user.userlevel = 'SUPERVISOR' THEN 'Network Engineer' WHEN user.userlevel ='SALES EXICUTIVE' THEN 'SALES EXICUTIVE' ELSE 'Back Office' END) as designation,(CASE WHEN user.userlevel = 'FIELD' || user.userlevel = 'SUPERVISOR' THEN 'Engineer' WHEN user.userlevel ='SALES EXICUTIVE' THEN 'SALES' ELSE 'Management' END) as department,day(last_day('"+month+"')) as workingdays,(SELECT COUNT(*) FROM userattendance WHERE userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') AND userattendance.outtime IS NOT NULL and DATE_FORMAT(userattendance.intime, '%H:%i %p') < (SELECT DATE_FORMAT(shiftmaster.intime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)) AND DATE_FORMAT(userattendance.outtime, '%H:%i %p') >= (SELECT DATE_FORMAT(shiftmaster.outtime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid))) as presentdays,(SELECT COUNT(*) FROM userattendance WHERE userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') AND(userattendance.outtime IS NULL OR DATE_FORMAT(userattendance.intime, '%H:%i %p') > (SELECT DATE_FORMAT(shiftmaster.intime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)) OR DATE_FORMAT(userattendance.outtime, '%H:%i %p') < (SELECT DATE_FORMAT(shiftmaster.outtime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)))) as halfdays,IFNULL((SELECT employeemaster.salary FROM employeemaster WHERE employeemaster.id = user.empid),0) as salary,(SELECT COUNT(*) FROM userattendance WHERE DAYNAME(userattendance.attdate) = 'Thursday' AND userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') AND userattendance.outtime IS NOT NULL) as thursdays,(SELECT employeemaster.joindate FROM employeemaster WHERE employeemaster.id = user.empid) as joiningdate,IFNULL(ROUND(((SELECT employeemaster.salary FROM employeemaster WHERE employeemaster.id = user.empid) / day(last_day('"+month+"'))),2),0) as perdaysal,IFNULL(ROUND((((SELECT employeemaster.salary FROM employeemaster WHERE employeemaster.id = user.empid) / day(last_day('"+month+"'))) * (SELECT COUNT(*) FROM userattendance WHERE DAYNAME(userattendance.attdate) = 'Thursday' AND userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') AND userattendance.outtime IS NOT NULL) +(((SELECT employeemaster.salary FROM employeemaster WHERE employeemaster.id = user.empid) / day(last_day('"+month+"'))) * (SELECT COUNT(*) FROM userattendance WHERE userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') AND userattendance.outtime IS NOT NULL and DATE_FORMAT(userattendance.intime, '%H:%i %p') < (SELECT DATE_FORMAT(shiftmaster.intime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)) AND DATE_FORMAT(userattendance.outtime, '%H:%i %p') >= (SELECT DATE_FORMAT(shiftmaster.outtime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid))))+ ((((SELECT employeemaster.salary FROM employeemaster WHERE employeemaster.id = user.empid) / day(last_day('"+month+"'))) * (SELECT COUNT(*) FROM userattendance WHERE userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') AND(userattendance.outtime IS NULL OR DATE_FORMAT(userattendance.intime, '%H:%i %p') > (SELECT DATE_FORMAT(shiftmaster.intime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)) OR DATE_FORMAT(userattendance.outtime, '%H:%i %p') < (SELECT DATE_FORMAT(shiftmaster.outtime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)))))/ 2)),2),0) as totalsal,IFNULL((SELECT SUM(advancepayment.amt) FROM advancepayment WHERE advancepayment.userid = user.id AND MONTH(advancepayment.paymentmonth) = MONTH('"+month+"')),0) as advance,IFNULL((SELECT SUM(loan.monthlyamt) FROM loan WHERE loan.userid = user.id AND loan.loanamt > 0),0) as loaninst,(SELECT COUNT(*) FROM userattendance WHERE userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') and (DATE_FORMAT(userattendance.intime,'%h:%i %p')) BETWEEN (SELECT DATE_FORMAT((SELECT DATE_ADD(shiftmaster.intime,INTERVAL 0 HOUR) FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)),'%h:%i %p'))  and (SELECT DATE_FORMAT((SELECT DATE_ADD(shiftmaster.intime,INTERVAL 1 HOUR) FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)),'%h:%i %p'))) as Latemarks FROM user",function(err, result){
+			con.query("select MONTH('"+month+"') as month,user.id,user.fullname,day(last_day('"+month+"')) as workingdays,(SELECT COUNT(*) FROM userattendance WHERE userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') AND userattendance.outtime IS NOT NULL and DATE_FORMAT(userattendance.intime, '%H:%i %p') < (SELECT DATE_FORMAT(shiftmaster.intime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)) AND DATE_FORMAT(userattendance.outtime, '%H:%i %p') >= (SELECT DATE_FORMAT(shiftmaster.outtime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid))) as presentdays,IFNULL((SELECT employeemaster.salary FROM employeemaster WHERE employeemaster.id = user.empid),0) as salary FROM user",function(err, result){
 				
 			  if(err)
 			  {
@@ -622,7 +644,6 @@ function entity() {
 			var sql = "select MONTH('"+month+"') as month,(SELECT DATE_ADD(shiftmaster.intime, INTERVAL 0 HOUR) FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)) as stime,user.id,user.username,user.fullname,(CASE WHEN user.userlevel = 'FIELD' || user.userlevel = 'SUPERVISOR' THEN 'Network Engineer' WHEN user.userlevel ='SALES EXICUTIVE' THEN 'SALES EXICUTIVE' ELSE 'Back Office' END) as designation,(CASE WHEN user.userlevel = 'FIELD' || user.userlevel = 'SUPERVISOR' THEN 'Engineer' WHEN user.userlevel ='SALES EXICUTIVE' THEN 'SALES' ELSE 'Management' END) as department,day(last_day('"+month+"')) as workingdays,(SELECT COUNT(*) FROM userattendance WHERE userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') AND userattendance.outtime IS NOT NULL and DATE_FORMAT(userattendance.intime, '%H:%i %p') < (SELECT DATE_FORMAT(shiftmaster.intime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)) AND DATE_FORMAT(userattendance.outtime, '%H:%i %p') >= (SELECT DATE_FORMAT(shiftmaster.outtime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid))) as presentdays,(SELECT COUNT(*) FROM userattendance WHERE userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') AND(userattendance.outtime IS NULL OR DATE_FORMAT(userattendance.intime, '%H:%i %p') > (SELECT DATE_FORMAT(shiftmaster.intime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)) OR DATE_FORMAT(userattendance.outtime, '%H:%i %p') < (SELECT DATE_FORMAT(shiftmaster.outtime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)))) as halfdays,IFNULL((SELECT employeemaster.salary FROM employeemaster WHERE employeemaster.id = user.empid),0) as salary,(SELECT COUNT(*) FROM userattendance WHERE DAYNAME(userattendance.attdate) = 'Thursday' AND userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') AND userattendance.outtime IS NOT NULL) as thursdays,(SELECT employeemaster.joindate FROM employeemaster WHERE employeemaster.id = user.empid) as joiningdate,IFNULL(ROUND(((SELECT employeemaster.salary FROM employeemaster WHERE employeemaster.id = user.empid) / day(last_day('"+month+"'))),2),0) as perdaysal,IFNULL(ROUND((((SELECT employeemaster.salary FROM employeemaster WHERE employeemaster.id = user.empid) / day(last_day('"+month+"'))) * (SELECT COUNT(*) FROM userattendance WHERE DAYNAME(userattendance.attdate) = 'Thursday' AND userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') AND userattendance.outtime IS NOT NULL) +(((SELECT employeemaster.salary FROM employeemaster WHERE employeemaster.id = user.empid) / day(last_day('"+month+"'))) * (SELECT COUNT(*) FROM userattendance WHERE userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') AND userattendance.outtime IS NOT NULL and DATE_FORMAT(userattendance.intime, '%H:%i %p') < (SELECT DATE_FORMAT(shiftmaster.intime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)) AND DATE_FORMAT(userattendance.outtime, '%H:%i %p') >= (SELECT DATE_FORMAT(shiftmaster.outtime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid))))+ ((((SELECT employeemaster.salary FROM employeemaster WHERE employeemaster.id = user.empid) / day(last_day('"+month+"'))) * (SELECT COUNT(*) FROM userattendance WHERE userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') AND(userattendance.outtime IS NULL OR DATE_FORMAT(userattendance.intime, '%H:%i %p') > (SELECT DATE_FORMAT(shiftmaster.intime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)) OR DATE_FORMAT(userattendance.outtime, '%H:%i %p') < (SELECT DATE_FORMAT(shiftmaster.outtime, '%H:%i %p') FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)))))/ 2)),2),0) as totalsal,IFNULL((SELECT SUM(advancepayment.amt) FROM advancepayment WHERE advancepayment.userid = user.id AND MONTH(advancepayment.paymentmonth) = MONTH('"+month+"')),0) as advance,IFNULL((SELECT SUM(advancepayment.cut_amt) FROM advancepayment WHERE advancepayment.userid = user.id AND MONTH(advancepayment.paymentmonth) = MONTH('"+month+"')),0) as payamt,IFNULL((SELECT SUM(loan.monthlyamt) FROM loan WHERE loan.userid = user.id AND loan.loanamt > 0),0) as loaninst,(IFNULL((SELECT `travel_exp` FROM `expense` WHERE expense.userid = user.id),0)) as travel_exp,(IFNULL((SELECT expense.mobile_exp FROM expense WHERE expense.userid = user.id),0)) as mobile_exp,(IFNULL((SELECT expense.other_exp FROM expense WHERE expense.userid = user.id),0)) as other_exp,(SELECT COUNT(*) FROM userattendance WHERE userattendance.userid = user.id AND MONTH(userattendance.attdate) = MONTH('"+month+"') and (DATE_FORMAT(userattendance.intime,'%h:%i %p')) BETWEEN (SELECT DATE_FORMAT((SELECT DATE_ADD(shiftmaster.intime,INTERVAL 0 HOUR) FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)),'%h:%i %p'))  and (SELECT DATE_FORMAT((SELECT DATE_ADD(shiftmaster.intime,INTERVAL 1 HOUR) FROM shiftmaster WHERE shiftmaster.id = (SELECT employeemaster.shiftid FROM employeemaster WHERE employeemaster.id = user.empid)),'%h:%i %p'))) as Latemarks FROM user where user.id = "+userid;
 			
 			con.query(sql,function(err, result){
-				console.log(result);
 				console.log(err);
 			  if(err)
 			  {
@@ -728,8 +749,8 @@ function entity() {
 	{ 				
 		connection.acquire(function(err, con) {
 			
-			con.query('SELECT *,MONTHNAME(paymentmonth) as month FROM `advancepayment` WHERE `userid` ='+userid+' order by id desc',function(err, result){
-				
+			con.query('SELECT *,(SELECT SUM(advancepayment.amt) - (SELECT SUM(a.cut_amt) FROM advancepayment a WHERE DATE_FORMAT(a.paymentmonth,"%m-%Y") >= DATE_FORMAT(CURDATE(),"%m-%Y") AND a.userid = '+userid+') FROM advancepayment WHERE advancepayment.userid = '+userid+') as advancebal,(SELECT SUM(loan.loanamt) - (SELECT SUM(l.monthlyamt) FROM loan l WHERE DATE_FORMAT(l.instmonth,"%m-%Y") >= DATE_FORMAT(CURDATE(),"%m-%Y") AND l.userid = '+userid+') FROM loan WHERE loan.userid = '+userid+') as loadnbal,MONTHNAME(paymentmonth) as month FROM `advancepayment` WHERE `userid` ='+userid+' order by id desc',function(err, result){
+				console.log(err)
 			  if(err)
 			  {
 				  con.release();
@@ -747,7 +768,7 @@ function entity() {
 	{ 				
 		connection.acquire(function(err, con) {
 			
-			con.query('SELECT * FROM `advancepayment` WHERE `id` ='+id,function(err, result){
+			con.query('SELECT *,(SELECT SUM(advancepayment.amt) - (SELECT SUM(a.cut_amt) FROM advancepayment a WHERE DATE_FORMAT(a.paymentmonth,"%m-%Y") >= DATE_FORMAT(CURDATE(),"%m-%Y") AND a.userid = user.id) FROM advancepayment WHERE advancepayment.userid = user.id) as advancebal,(SELECT SUM(loan.loanamt) - (SELECT SUM(l.monthlyamt) FROM loan l WHERE DATE_FORMAT(l.instmonth,"%m-%Y") >= DATE_FORMAT(CURDATE(),"%m-%Y") AND l.userid = user.id) FROM loan WHERE loan.userid = user.id) as loadnbal FROM `advancepayment` WHERE `id` ='+id,function(err, result){
 				
 			  if(err)
 			  {
@@ -791,7 +812,7 @@ function entity() {
 			console.log(details);
 		if(details[0].id)	
 		{
-			var sql = 'UPDATE `advancepayment` SET `userid`= '+details[0].userid+',`paymentmonth`= "'+details[0].paymentmonth+'",`amt`= '+details[0].amt+',`cut_amt`= '+details[0].cut_amt+' WHERE `id`= '+details[0].id;
+			var sql = 'UPDATE `advancepayment` SET `userid`= '+details[0].userid+',`paymentmonth`= "'+moment(details[0].paymentmonth).format("YYYY-MM-DD HH:mm:ss")+'",`amt`= '+details[0].amt+',`cut_amt`= '+details[0].cut_amt+' WHERE `id`= '+details[0].id;
 		}
 		else
 		{
@@ -799,7 +820,7 @@ function entity() {
 			{
 				details[0].cut_amt = '0';
 			}
-			var sql ='INSERT INTO `advancepayment`(`userid`, `paymentmonth`, `amt`,`cut_amt`, `createdby`) VALUES ('+details[0].userid+',"'+details[0].paymentmonth+'",'+details[0].amt+','+details[0].cut_amt+','+details[0].createdby+')';
+			var sql ='INSERT INTO `advancepayment`(`userid`, `paymentmonth`, `amt`,`cut_amt`, `createdby`) VALUES ('+details[0].userid+',"'+moment(details[0].paymentmonth).format("YYYY-MM-DD HH:mm:ss")+'",'+details[0].amt+','+details[0].cut_amt+','+details[0].createdby+')';
 		}
 		connection.acquire(function(err, con) {
 			
@@ -822,11 +843,11 @@ function entity() {
 	{ 			
 		if(details[0].id)	
 		{
-			var sql = 'UPDATE `loan` SET `userid`= '+details[0].userid+',`loanamt`='+details[0].loanamt+',`installments`='+details[0].installments+',`monthlyamt`='+details[0].monthlyamt+',`instmonth`= "'+details[0].instmonth+'" WHERE `id` = '+details[0].id;
+			var sql = 'UPDATE `loan` SET `userid`= '+details[0].userid+',`loanamt`='+details[0].loanamt+',`installments`='+details[0].installments+',`monthlyamt`='+details[0].monthlyamt+',`instmonth`= "'+moment(details[0].instmonth).format("YYYY-MM-DD HH:mm:ss")+'" WHERE `id` = '+details[0].id;
 		}
 		else
 		{
-			var sql ='INSERT INTO `loan`(`userid`, `loanamt`, `installments`, `monthlyamt`, `instmonth`, `createdby`) VALUES ('+details[0].userid+',"'+details[0].loanamt+'",'+details[0].installments+','+details[0].monthlyamt+',"'+details[0].instmonth+'",'+details[0].createdby+')';
+			var sql ='INSERT INTO `loan`(`userid`, `loanamt`, `installments`, `monthlyamt`, `instmonth`, `createdby`) VALUES ('+details[0].userid+',"'+details[0].loanamt+'",'+details[0].installments+','+details[0].monthlyamt+',"'+moment(details[0].instmonth).format("YYYY-MM-DD HH:mm:ss")+'",'+details[0].createdby+')';
 		}
 		connection.acquire(function(err, con) {
 			
@@ -910,6 +931,43 @@ function entity() {
 				}
 			});
 		});
+  };
+  
+
+  this.AuthenticateAdmin = function(userlevel,password,res)
+	{ 			
+console.log(userlevel+"-------")
+		if(userlevel === 'HO')
+		{
+		connection.acquire(function(err, con) {
+			
+			con.query('SELECT `id`,`userlevel` FROM `user` WHERE `extsec` = "'+password+'" and userlevel = "HO"',function(err, result){
+				
+			  if(err)
+			  {
+				  con.release();
+				 res.send({status:1,message:'Something went wrong, Pleas try again.'});
+			  }
+				else
+				{
+					con.release();
+					console.log(result);
+					if(result.length == 1 && result[0].userlevel == 'HO')
+					{
+						res.send({status:0,message:'Authenticate Sucessfully'});
+					}
+					else
+					{
+						 res.send({status:1,message:'You are not a admin user.'});
+					}
+				}
+			});
+		});
+		}
+		else
+		{
+			 res.send({status:1,message:'You are not a admin user.'});
+		}
   };
   
   /* Rules */
@@ -1010,11 +1068,11 @@ function entity() {
 	console.log(details);
 		if(details[0].id)	
 		{
-			var sql = 'UPDATE `vendorpayment` SET `vendor`= "'+details[0].vendor+'",`paymentdate`="'+details[0].paymentdate+'",`amount`='+details[0].amount+' WHERE `id` = '+details[0].id;
+			var sql = 'UPDATE `vendorpayment` SET `vendor`= "'+details[0].vendor+'",`paymentdate`="'+moment(details[0].paymentdate).format("YYYY-MM-DD HH:mm:ss")+'",`amount`='+details[0].amount+' WHERE `id` = '+details[0].id;
 		}
 		else
 		{
-			var sql ='INSERT INTO `vendorpayment`(`vendor`, `amount`, `paymentdate`, `createdby`) VALUES ("'+details[0].vendor+'",'+details[0].amount+',"'+details[0].paymentdate+'",'+details[0].createdby+')';
+			var sql ='INSERT INTO `vendorpayment`(`vendor`, `amount`, `paymentdate`, `createdby`) VALUES ("'+details[0].vendor+'",'+details[0].amount+',"'+moment(details[0].paymentdate).format("YYYY-MM-DD HH:mm:ss")+'",'+details[0].createdby+')';
 		}
 		connection.acquire(function(err, con) {
 			
@@ -1982,6 +2040,147 @@ this.AddNewCollection= function (collection, res) {
   };
   
   
+  this.getEmployesLoanDetails = function(userid,res)
+  {
+	  connection.acquire(function(err, con) {
+		  con.query('SELECT id,`loanamt` FROM `loan` WHERE `userid` = '+userid,function(err, result){
+			con.release();
+			  if(err)
+			  {
+				res.send({status:1,message:"No record found"}) 
+			  }
+				else
+				{
+					res.send(result) 
+				}
+			});
+	  });
+  };
+
+  this.getLoanPaymentData = function(paymentid,res)
+  {
+	  connection.acquire(function(err, con) {
+		  con.query('SELECT *,(SELECT loan.userid FROM loan WHERE loan.id = loanpaymentdetails.loanid) as userid FROM `loanpaymentdetails` WHERE `id` = '+paymentid,function(err, result){
+			con.release();
+			  if(err)
+			  {
+				res.send({status:1,message:"No record found"}) 
+			  }
+				else
+				{
+					res.send(result) 
+				}
+			});
+	  });
+  };
+
+  this.DeleteLoanPaymentData = function(paymentid,res)
+  {
+	  connection.acquire(function(err, con) {
+		  con.query('DELETE FROM `loanpaymentdetails` WHERE `id` = '+paymentid,function(err, result){
+			con.release();
+			  if(err)
+			  {
+				res.send({status:1,message:"Something went wrong, Please try again later."}) 
+			  }
+				else
+				{
+					res.send({status:0,message:"Record deleted successfully"}); 
+				}
+			});
+	  });
+  };
+   
+  this.ListLoanPayments = function(req,res)
+  {
+	  connection.acquire(function(err, con) {
+		  con.query('SELECT `paymonth`,paidamount,`id`,`comment`,`createddate`,(SELECT user.fullname FROM user WHERE user.id = (SELECT loan.userid FROM loan WHERE loan.id = loanpaymentdetails.loanid)) as fullname,(SELECT loan.loanamt FROM loan WHERE loan.id = loanpaymentdetails.loanid) as loanamt,(SELECT user.username FROM user WHERE user.id = loanpaymentdetails.createdby) as createduser,(SELECT SUM(loan.loanamt) FROM loan WHERE loan.id = loanpaymentdetails.loanid) as actualLoanAmount FROM `loanpaymentdetails` ORDER BY id DESC',function(err, result){
+			con.release();
+			  if(err)
+			  {
+				res.send({status:1,message:"No record found"}) 
+			  }
+				else
+				{
+					res.send(result) 
+				}
+			});
+	  });
+  };
+
+  this.getEmployesLoanPaymentDetails = function(empid,res)
+  {
+	  connection.acquire(function(err, con) {
+		  con.query('SELECT `paymonth`,paidamount,`id`,`comment`,`createddate`,(SELECT user.fullname FROM user WHERE user.id = (SELECT loan.userid FROM loan WHERE loan.id = loanpaymentdetails.loanid)) as fullname,(SELECT loan.loanamt FROM loan WHERE loan.id = loanpaymentdetails.loanid) as loanamt,(SELECT user.username FROM user WHERE user.id = loanpaymentdetails.createdby) as createduser,(SELECT SUM(loan.loanamt) FROM loan WHERE loan.userid = '+empid+') as actualLoanAmount FROM `loanpaymentdetails` WHERE loanpaymentdetails.loanid IN (SELECT loan.id FROM loan WHERE loan.userid = '+empid+') ORDER BY id DESC',function(err, result){
+			con.release();
+			  if(err)
+			  {
+				res.send({status:1,message:"No record found"}) 
+			  }
+				else
+				{
+					res.send(result) 
+				}
+			});
+	  });
+  };
+  
+  this.SaveLoanPaymentdetails = function(loanpaymentdetails,res)
+  {
+	  
+	  var paymentmonth = new Date(loanpaymentdetails.paymonth);
+						paymentmonth.setMonth(paymentmonth.getMonth());
+	  
+	  connection.acquire(function(err, con) {
+		  if(loanpaymentdetails.id)
+		  {
+			  var sql = 'UPDATE `loanpaymentdetails` SET `loanid`=?,`paymonth`=?,`paidamount`=?,`comment`=? WHERE `id` = ?';
+			   var detailsobj = [loanpaymentdetails.loanid,paymentmonth,loanpaymentdetails.paidamount,loanpaymentdetails.comment,loanpaymentdetails.id];
+		  }
+		  else
+		  {
+			  var sql = 'INSERT INTO `loanpaymentdetails`(`loanid`, `paymonth`, `paidamount`, `createdby`,`comment`) VALUES (?,?,?,?,?)';
+			  var detailsobj = [loanpaymentdetails.loanid,paymentmonth,loanpaymentdetails.paidamount,loanpaymentdetails.createdby,loanpaymentdetails.comment];
+		  }
+		  con.query(sql,detailsobj,function(err, result){
+			con.release();
+			  if(err)
+			  {
+				  
+				res.send({status:1,message:"Something went wrong, Please try again"}) ;
+			  }
+				else
+				{
+					res.send({status:0,message:"Details saved successfully"}) ;
+				}
+			});
+	  });
+  };
+  
+  
+
+
+//   EMPLOYEE ATTENDANCE REPORT
+
+this.getEmployeeAttendanceReport = function(attfilter,res)
+  {
+	  connection.acquire(function(err, con) {
+		  con.query('SELECT `attdate`,`intime`,`outtime`,DATE_FORMAT(`attdate`,"%m-%Y") AS attmonth,(SELECT employeemaster.name FROM employeemaster WHERE employeemaster.id = (SELECT user.empid FROM user WHERE user.id = '+attfilter.selectedUser+' LIMIT 1)) AS employeename FROM `userattendance` WHERE userattendance.userid = '+attfilter.selectedUser+' AND DATE_FORMAT(`attdate`,"%m-%Y") = "'+attfilter.selectedMonth+'"',function(err, result){
+			  if(err)
+			  {
+				res.send({status:1,message:"No record found"}) 
+			  }
+				else
+				{
+					res.send(result) 
+				}
+			});
+			con.release();
+	  });
+  };
+
+//EMPLOYEE ATTENDANCE REPORT
+
   
 }
 module.exports = new entity();
